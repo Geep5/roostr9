@@ -2,10 +2,19 @@ const bitcoin = require('bitcoinjs-lib');
 const { getDb } = require('../database/connection');
 
 class User {
-  static async createFromPrivateKey(privateKeyHex) {
+  static async createFromPrivateKey(privateKeyInput) {
     try {
-      // Validate and parse private key
-      const keyPair = bitcoin.ECPair.fromPrivateKey(Buffer.from(privateKeyHex, 'hex'));
+      let keyPair;
+      
+      // Check if it's WIF format or hex format
+      if (this.isWIF(privateKeyInput)) {
+        keyPair = bitcoin.ECPair.fromWIF(privateKeyInput);
+      } else if (this.validatePrivateKeyHex(privateKeyInput)) {
+        keyPair = bitcoin.ECPair.fromPrivateKey(Buffer.from(privateKeyInput, 'hex'));
+      } else {
+        throw new Error('Invalid private key format');
+      }
+      
       const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey });
       
       const db = getDb();
@@ -52,7 +61,11 @@ class User {
     return result.rows[0];
   }
 
-  static validatePrivateKey(privateKeyHex) {
+  static validatePrivateKey(privateKeyInput) {
+    return this.isWIF(privateKeyInput) || this.validatePrivateKeyHex(privateKeyInput);
+  }
+  
+  static validatePrivateKeyHex(privateKeyHex) {
     try {
       // Remove any whitespace and validate hex format
       const cleanKey = privateKeyHex.trim();
@@ -67,10 +80,34 @@ class User {
       return false;
     }
   }
-
-  static getAddressFromPrivateKey(privateKeyHex) {
+  
+  static isWIF(privateKeyInput) {
     try {
-      const keyPair = bitcoin.ECPair.fromPrivateKey(Buffer.from(privateKeyHex, 'hex'));
+      const cleanKey = privateKeyInput.trim();
+      // WIF format starts with K, L (compressed) or 5 (uncompressed)
+      if (!/^[KL5][1-9A-HJ-NP-Za-km-z]{50,51}$/.test(cleanKey)) {
+        return false;
+      }
+      // Try to decode it
+      bitcoin.ECPair.fromWIF(cleanKey);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  static getAddressFromPrivateKey(privateKeyInput) {
+    try {
+      let keyPair;
+      
+      if (this.isWIF(privateKeyInput)) {
+        keyPair = bitcoin.ECPair.fromWIF(privateKeyInput);
+      } else if (this.validatePrivateKeyHex(privateKeyInput)) {
+        keyPair = bitcoin.ECPair.fromPrivateKey(Buffer.from(privateKeyInput, 'hex'));
+      } else {
+        return null;
+      }
+      
       const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey });
       return address;
     } catch (error) {

@@ -13,7 +13,7 @@ router.post('/login', async (req, res) => {
     
     // Validate private key format
     if (!User.validatePrivateKey(privateKey)) {
-      return res.render('login', { error: 'Invalid private key format. Please enter a 64-character hex string.' });
+      return res.render('login', { error: 'Invalid private key format. Please enter a valid WIF or 64-character hex private key.' });
     }
     
     // Create or get user from private key
@@ -37,11 +37,13 @@ router.post('/create-wallet', (req, res) => {
     // Generate new Bitcoin key pair
     const keyPair = bitcoin.ECPair.makeRandom();
     const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey });
-    const privateKey = keyPair.privateKey.toString('hex');
+    const privateKeyHex = keyPair.privateKey.toString('hex');
+    const privateKeyWIF = keyPair.toWIF();
     
     // Render the page with the generated wallet info
     res.render('create-wallet', {
-      privateKey,
+      privateKeyWIF,
+      privateKeyHex,
       address
     });
   } catch (error) {

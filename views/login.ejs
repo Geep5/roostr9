@@ -9,14 +9,12 @@
     
     <form action="/login" method="POST">
         <div class="form-group">
-            <label for="privateKey">Private Key (Hex Format)</label>
+            <label for="privateKey">Private Key (WIF or Hex Format)</label>
             <input type="password" id="privateKey" name="privateKey" 
-                   placeholder="Enter your 64-character hex private key" 
-                   pattern="[0-9a-fA-F]{64}" 
-                   maxlength="64"
+                   placeholder="e.g. KxzdS8pAeySVJWUTX13hGT... or 64-char hex" 
                    required>
             <small style="color: #666; display: block; margin-top: 0.5rem;">
-                Your private key is never stored on our servers
+                Accepts WIF format (starts with K, L, or 5) or 64-character hex
             </small>
         </div>
         
@@ -40,6 +38,12 @@
         <li>Never share your private key with anyone</li>
         <li>We derive your Bitcoin address from your private key for authentication</li>
         <li>Private keys are not stored on our servers</li>
+    </ul>
+    
+    <h4 style="margin-top: 1rem;">Supported Formats:</h4>
+    <ul style="color: #666; font-size: 0.875rem;">
+        <li><strong>WIF:</strong> KxzdS8pAeySVJWUTX13hGT... (starts with K, L, or 5)</li>
+        <li><strong>Hex:</strong> 0123456789abcdef... (64 characters)</li>
     </ul>
 </div>
 
