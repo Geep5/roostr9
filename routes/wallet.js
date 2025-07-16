@@ -14,7 +14,10 @@ router.get('/dashboard', requireAuth, async (req, res) => {
   try {
     const wallets = await Wallet.findByUserId(req.session.userId);
     res.render('dashboard', {
-      user: { username: req.session.username },
+      user: { 
+        username: req.session.address,
+        address: req.session.address 
+      },
       wallets
     });
   } catch (error) {
@@ -44,7 +47,10 @@ router.get('/wallet/:id', requireAuth, async (req, res) => {
     const transactions = await Wallet.getTransactions(wallet.id);
     
     res.render('wallet', {
-      user: { username: req.session.username },
+      user: { 
+        username: req.session.address,
+        address: req.session.address 
+      },
       wallet: {
         id: wallet.id,
         address: wallet.address,

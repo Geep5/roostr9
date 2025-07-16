@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const bitcoin = require('bitcoinjs-lib');
 const User = require('../models/user');
 
 router.get('/login', (req, res) => {
@@ -8,60 +9,55 @@ router.get('/login', (req, res) => {
 
 router.post('/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
-    const user = await User.findByUsername(username);
+    const { privateKey } = req.body;
     
-    if (!user) {
-      return res.render('login', { error: 'Invalid username or password' });
+    // Validate private key format
+    if (!User.validatePrivateKey(privateKey)) {
+      return res.render('login', { error: 'Invalid private key format. Please enter a 64-character hex string.' });
     }
     
-    const isValid = await User.validatePassword(password, user.password_hash);
-    
-    if (!isValid) {
-      return res.render('login', { error: 'Invalid username or password' });
-    }
+    // Create or get user from private key
+    const user = await User.createFromPrivateKey(privateKey);
     
     req.session.userId = user.id;
-    req.session.username = user.username;
+    req.session.address = user.address;
     res.redirect('/dashboard');
   } catch (error) {
     console.error('Login error:', error);
-    res.render('login', { error: 'An error occurred' });
+    res.render('login', { error: 'Invalid private key or login failed' });
   }
 });
 
-router.get('/register', (req, res) => {
-  res.render('register');
+router.get('/create-wallet', (req, res) => {
+  res.render('create-wallet');
 });
 
-router.post('/register', async (req, res) => {
+router.post('/create-wallet', (req, res) => {
   try {
-    const { username, password, confirmPassword } = req.body;
+    // Generate new Bitcoin key pair
+    const keyPair = bitcoin.ECPair.makeRandom();
+    const { address } = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey });
+    const privateKey = keyPair.privateKey.toString('hex');
     
-    if (password !== confirmPassword) {
-      return res.render('register', { error: 'Passwords do not match' });
-    }
-    
-    if (password.length < 6) {
-      return res.render('register', { error: 'Password must be at least 6 characters' });
-    }
-    
-    const user = await User.create(username, password);
-    req.session.userId = user.id;
-    req.session.username = user.username;
-    res.redirect('/dashboard');
+    // Render the page with the generated wallet info
+    res.render('create-wallet', {
+      privateKey,
+      address
+    });
   } catch (error) {
-    console.error('Registration error:', error);
-    const errorMessage = error.message === 'Username already exists' 
-      ? error.message 
-      : 'An error occurred during registration';
-    res.render('register', { error: errorMessage });
+    console.error('Wallet creation error:', error);
+    res.render('create-wallet', { error: 'Failed to create wallet' });
   }
 });
 
 router.get('/logout', (req, res) => {
   req.session.destroy();
   res.redirect('/login');
+});
+
+// Remove the old register route since we don't need it anymore
+router.get('/register', (req, res) => {
+  res.redirect('/create-wallet');
 });
 
 module.exports = router;
