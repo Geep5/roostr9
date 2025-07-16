@@ -1,0 +1,48 @@
+<%- include('partials/header', { title: 'Dashboard' }) %>
+
+<h1>Welcome, <%= user.username %>!</h1>
+
+<div class="card">
+    <h2>Your Wallets</h2>
+    
+    <% if (wallets.length === 0) { %>
+        <p>You don't have any wallets yet.</p>
+    <% } else { %>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #ddd;">
+                        <th style="padding: 1rem; text-align: left;">Address</th>
+                        <th style="padding: 1rem; text-align: left;">Balance</th>
+                        <th style="padding: 1rem; text-align: left;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% wallets.forEach(wallet => { %>
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 1rem;">
+                                <code style="background-color: #f5f5f5; padding: 0.25rem 0.5rem; border-radius: 3px;">
+                                    <%= wallet.address %>
+                                </code>
+                            </td>
+                            <td style="padding: 1rem;">₿ <%= wallet.balance.toFixed(8) %></td>
+                            <td style="padding: 1rem;">
+                                <a href="/wallet/<%= wallet.id %>" class="btn" style="font-size: 0.875rem; padding: 0.5rem 1rem;">
+                                    View Details
+                                </a>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+    <% } %>
+    
+    <div style="margin-top: 2rem;">
+        <form action="/wallet/create" method="POST" style="display: inline;">
+            <button type="submit" class="btn">Create New Wallet</button>
+        </form>
+    </div>
+</div>
+
+<%- include('partials/footer') %>
